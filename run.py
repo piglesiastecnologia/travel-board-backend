@@ -1,10 +1,11 @@
 from app import create_app
-from app.db.connection import init_db
+from app.extensions import db
+from app.models.destination import Destination
 
 app = create_app()
 
 with app.app_context():
-    init_db()
+    db.create_all()    
 
 if __name__ == "__main__":
     app.run(debug=True)
