@@ -12,3 +12,6 @@ def get_all_destinations():
     # search all destinations persisted in the DB
     return Destination.query.order_by(Destination.id.desc()).all()
     
+def get_destination_by_id(destination_id):
+    # search destination by id
+    return Destination.query.get(destination_id)

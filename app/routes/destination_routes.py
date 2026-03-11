@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify, request
 from app.services.destination_service import (
     create_destination,
-    get_all_destinations
+    get_all_destinations,
+    get_destination_by_id,
 )
 
 # Creating the blueprint for the destination routes
@@ -31,3 +32,11 @@ def create_destination_route():
 def get_all_destinations_route():
     destinations = get_all_destinations()
     return jsonify([destination.to_dict() for destination in destinations]), 200
+
+@destination_bp.route('/destinations/<int:destination_id>', methods=["GET"])
+def get_destination_route(destination_id):
+    try:
+        destination = get_destination_by_id(destination_id)
+        return jsonify(destination.to_dict()), 200
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 404
