@@ -3,6 +3,7 @@ from app.services.destination_service import (
     create_destination,
     get_all_destinations,
     get_destination_by_id,
+    update_destination,
 )
 
 # Creating the blueprint for the destination routes
@@ -40,3 +41,22 @@ def get_destination_route(destination_id):
         return jsonify(destination.to_dict()), 200
     except ValueError as error:
         return jsonify({"error": str(error)}), 404
+    
+@destination_bp.route('/destinations/<int:destination_id>', methods=["PUT"])
+def update_destination_route(destination_id):
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
+    
+    try:
+        data = request.get_json(silent=True)
+        
+        if not data:
+            return jsonify({"error": "Request body must be a valid JSON"}), 400
+        
+        destination = update_destination(destination_id, data)
+        return jsonify(destination.to_dict()), 200
+    
+    except ValueError as error:
+        message = str(error)
+        status_code = 404 if "not found" in message.lower() else 400
+        return jsonify({"error": message}), status_code

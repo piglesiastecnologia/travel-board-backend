@@ -4,6 +4,7 @@ from app.repositories.destination_repository import (
     create_destination as create_destination_repository,
     get_all_destinations as get_all_destinations_repository,
     get_destination_by_id as get_destination_by_id_repository,
+    update_destination as update_destination_repository,
 )
 
 ALLOWED_STATUSES = {"idea", "planned", "booked", "visited"}
@@ -77,3 +78,43 @@ def get_destination_by_id(destination_id):
         raise ValueError(f"Destination with id {destination_id} not found.")
     
     return destination
+
+def update_destination(destination_id, data):
+    destination = get_destination_by_id_repository(destination_id)
+    
+    if not destination:
+        raise ValueError(f"Destination with id {destination_id} not found.")
+    
+    if "name" in data and data["name"] not in (None, ""):
+        destination.name = data["name"]
+        
+    if "country" in data and data["country"] not in (None, ""):
+        destination.country = data["country"]
+        
+    if "city" in data and data["city"] not in (None, ""):
+        destination.country = data["city"]
+        
+    if "category" in data and data["category"] not in (None, ""):
+        category = data["category"].strip().lower()
+        validate_category(category)
+        destination.category = category
+        
+    if "status" in data and data["status"] not in (None, ""):
+        status = data["status"].strip().lower()
+        validate_status(status)
+        destination.status = status
+        
+    if "planned_date" in data:
+        destination.planned_date = parse_planned_date(data.get("planned_date"))
+        
+    if "estimated_budget" in data:
+        destination.estimated_budget = parse_estimated_budget(data.get("estimated_budget"))
+        
+    if "notes" in data:
+        destination.notes = data.get("notes")
+        
+    if "is_favorite" in data:
+        destination.is_favorite = bool(data.get("is_favorite"))
+        
+    return update_destination_repository(destination)
+        
