@@ -5,6 +5,7 @@ from app.repositories.destination_repository import (
     get_all_destinations as get_all_destinations_repository,
     get_destination_by_id as get_destination_by_id_repository,
     update_destination as update_destination_repository,
+    delete_destination as delete_destination_repository,
 )
 
 ALLOWED_STATUSES = {"idea", "planned", "booked", "visited"}
@@ -69,8 +70,15 @@ def create_destination(data):
     
     return create_destination_repository(destination)
 
-def get_all_destinations():
-    return get_all_destinations_repository()
+def get_all_destinations(page, per_page):
+    pagination = get_all_destinations_repository(page, per_page)
+    
+    return {
+        "items": [destination.to_dict() for destination in pagination.items],
+        "total": pagination.total,
+        "pages": pagination.pages,
+        "current_page": pagination.page
+    }
 
 def get_destination_by_id(destination_id):
     destination = get_destination_by_id_repository(destination_id=destination_id)
@@ -117,4 +125,10 @@ def update_destination(destination_id, data):
         destination.is_favorite = bool(data.get("is_favorite"))
         
     return update_destination_repository(destination)
+
+def delete_destination(destination_id):
+    # here we'll apply reusable function to get the destination id
+    destination = get_destination_by_id(destination_id)
+    delete_destination_repository(destination)
+    
         

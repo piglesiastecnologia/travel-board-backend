@@ -8,9 +8,13 @@ def create_destination(destination):
     db.session.commit()
     return destination
     
-def get_all_destinations():
+def get_all_destinations(page, per_page):
     # search all destinations persisted in the DB
-    return Destination.query.order_by(Destination.id.desc()).all()
+    return Destination.query.order_by(Destination.id.desc()).paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
     
 def get_destination_by_id(destination_id):
     # search destination by id
@@ -20,3 +24,7 @@ def update_destination(destination):
     # persist changes from the object in memory
     db.session.commit()
     return destination
+
+def delete_destination(destination):
+    db.session.delete(destination)
+    db.session.commit()

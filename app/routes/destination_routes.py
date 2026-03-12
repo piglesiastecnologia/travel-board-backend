@@ -4,17 +4,86 @@ from app.services.destination_service import (
     get_all_destinations,
     get_destination_by_id,
     update_destination,
+    delete_destination,
 )
 
 # Creating the blueprint for the destination routes
 destination_bp = Blueprint("destinations", __name__)
 
 @destination_bp.route('/health', methods=['GET'])
-def health_index():
+def index():
+    """
+    Health check endpoint
+    ---
+    tags:
+      - Health
+    responses:
+      200:
+        description: API is running
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: ok
+    """
     return jsonify({"status": "ok"}), 200
 
 @destination_bp.route('/destinations', methods=["POST"])
 def create_destination_route():
+    """
+Create a new destination
+---
+tags:
+  - Destinations
+consumes:
+  - application/json
+parameters:
+  - in: body
+    name: body
+    required: true
+    schema:
+      type: object
+      required:
+        - name
+        - country
+        - city
+        - category
+        - status
+      properties:
+        name:
+          type: string
+          example: Montreal
+        country:
+          type: string
+          example: Canada
+        city:
+          type: string
+          example: Montreal
+        category:
+          type: string
+          example: cultural
+        status:
+          type: string
+          example: planned
+        planned_date:
+          type: string
+          example: 2026-09-20
+        estimated_budget:
+          type: number
+          example: 3000
+        notes:
+          type: string
+          example: Visit museums and old port
+        is_favorite:
+          type: boolean
+          example: true
+responses:
+  201:
+    description: Destination successfully created
+  400:
+    description: Invalid request
+"""
     try:
         if not request.is_json:
             return jsonify({"error": "Request must be JSON"}), 400
@@ -31,11 +100,109 @@ def create_destination_route():
 
 @destination_bp.route('/destinations', methods=["GET"])
 def get_all_destinations_route():
-    destinations = get_all_destinations()
-    return jsonify([destination.to_dict() for destination in destinations]), 200
+    """
+List all destinations
+---
+tags:
+  - Destinations
+parameters:
+  - name: page
+    in: query
+    type: integer
+    required: false
+    example: 1
+  - name: per_page
+    in: query
+    type: integer
+    required: false
+    example: 10
+responses:
+  200:
+    description: A list of destinations
+    schema:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+            example: 1
+          name:
+            type: string
+            example: Montreal
+          country:
+            type: string
+            example: Canada
+          city:
+            type: string
+            example: Montreal
+          category:
+            type: string
+            example: cultural
+          planned_date:
+            type: string
+            example: 2026-09-20
+          estimated_budget:
+            type: number
+            example: 3000
+          status:
+            type: string
+            example: planned
+          notes:
+            type: string
+            example: Visit museums
+          is_favorite:
+            type: boolean
+            example: true
+"""
+    page = request.args.get("page", default=1, type=int)
+    per_page = request.args.get("per_page", default=10, type=int)
+    results = get_all_destinations(page, per_page)
+    
+    return jsonify(results), 200
 
 @destination_bp.route('/destinations/<int:destination_id>', methods=["GET"])
 def get_destination_route(destination_id):
+    """
+Get destination by ID
+---
+tags:
+  - Destinations
+parameters:
+  - name: destination_id
+    in: path
+    type: integer
+    required: true
+    example: 1
+responses:
+  200:
+    description: Destination found
+    schema:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        country:
+          type: string
+        city:
+          type: string
+        category:
+          type: string
+        planned_date:
+          type: string
+        estimated_budget:
+          type: number
+        status:
+          type: string
+        notes:
+          type: string
+        is_favorite:
+          type: boolean
+  404:
+    description: Destination not found
+"""
     try:
         destination = get_destination_by_id(destination_id)
         return jsonify(destination.to_dict()), 200
@@ -44,6 +211,51 @@ def get_destination_route(destination_id):
     
 @destination_bp.route('/destinations/<int:destination_id>', methods=["PUT"])
 def update_destination_route(destination_id):
+    """
+Update a destination
+---
+tags:
+  - Destinations
+consumes:
+  - application/json
+parameters:
+  - name: destination_id
+    in: path
+    type: integer
+    required: true
+    example: 1
+  - in: body
+    name: body
+    required: true
+    schema:
+      type: object
+      properties:
+        name:
+          type: string
+        country:
+          type: string
+        city:
+          type: string
+        category:
+          type: string
+        status:
+          type: string
+        planned_date:
+          type: string
+        estimated_budget:
+          type: number
+        notes:
+          type: string
+        is_favorite:
+          type: boolean
+responses:
+  200:
+    description: Destination updated successfully
+  400:
+    description: Invalid request
+  404:
+    description: Destination not found
+"""
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
     
@@ -60,3 +272,28 @@ def update_destination_route(destination_id):
         message = str(error)
         status_code = 404 if "not found" in message.lower() else 400
         return jsonify({"error": message}), status_code
+    
+@destination_bp.route('/destinations/<int:destination_id>', methods=["DELETE"])
+def delete_destination_route(destination_id):
+    """
+Delete a destination
+---
+tags:
+  - Destinations
+parameters:
+  - name: destination_id
+    in: path
+    type: integer
+    required: true
+    example: 1
+responses:
+  204:
+    description: Destination deleted successfully
+  404:
+    description: Destination not found
+"""
+    try:
+        delete_destination(destination_id)
+        return '', 204
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 404
