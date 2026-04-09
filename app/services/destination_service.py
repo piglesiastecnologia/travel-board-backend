@@ -70,9 +70,25 @@ def create_destination(data):
     
     return create_destination_repository(destination)
 
-def get_all_destinations(page, per_page):
-    pagination = get_all_destinations_repository(page, per_page)
-    
+def get_all_destinations(page, per_page, status="", category="", search=""):
+    normalized_status = status.strip().lower() if status else ""
+    normalized_category = category.strip().lower() if category else ""
+    normalized_search = search.strip() if search else ""
+
+    if normalized_status:
+        validate_status(normalized_status)
+
+    if normalized_category:
+        validate_category(normalized_category)
+
+    pagination = get_all_destinations_repository(
+        page=page,
+        per_page=per_page,
+        status=normalized_status,
+        category=normalized_category,
+        search=normalized_search,
+    )
+
     return {
         "items": [destination.to_dict() for destination in pagination.items],
         "total": pagination.total,
@@ -100,7 +116,7 @@ def update_destination(destination_id, data):
         destination.country = data["country"]
         
     if "city" in data and data["city"] not in (None, ""):
-        destination.country = data["city"]
+        destination.city = data["city"]
         
     if "category" in data and data["category"] not in (None, ""):
         category = data["category"].strip().lower()
@@ -124,6 +140,16 @@ def update_destination(destination_id, data):
     if "is_favorite" in data:
         destination.is_favorite = bool(data.get("is_favorite"))
         
+    return update_destination_repository(destination)
+
+def update_destination_favorite(destination_id, is_favorite):
+    destination = get_destination_by_id_repository(destination_id)
+
+    if not destination:
+        raise ValueError(f"Destination with id {destination_id} not found.")
+
+    destination.is_favorite = bool(is_favorite)
+
     return update_destination_repository(destination)
 
 def delete_destination(destination_id):

@@ -1,3 +1,4 @@
+from sqlalchemy import or_
 from app.extensions import db
 from app.models.destination import Destination
 
@@ -8,9 +9,25 @@ def create_destination(destination):
     db.session.commit()
     return destination
     
-def get_all_destinations(page, per_page):
-    # search all destinations persisted in the DB
-    return Destination.query.order_by(Destination.id.desc()).paginate(
+def get_all_destinations(page, per_page, status="", category="", search=""):
+    query = Destination.query
+
+    if status:
+        query = query.filter(Destination.status == status)
+
+    if category:
+        query = query.filter(Destination.category == category)
+
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            or_(
+                Destination.name.ilike(search_term),
+                Destination.city.ilike(search_term),
+            )
+        )
+
+    return query.order_by(Destination.id.desc()).paginate(
         page=page,
         per_page=per_page,
         error_out=False

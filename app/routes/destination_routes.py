@@ -4,6 +4,7 @@ from app.services.destination_service import (
     get_all_destinations,
     get_destination_by_id,
     update_destination,
+    update_destination_favorite,
     delete_destination,
 )
 
@@ -116,49 +117,39 @@ parameters:
     type: integer
     required: false
     example: 10
+  - name: status
+    in: query
+    type: string
+    required: false
+    example: planned
+  - name: category
+    in: query
+    type: string
+    required: false
+    example: cultural
+  - name: search
+    in: query
+    type: string
+    required: false
+    example: montreal
 responses:
   200:
-    description: A list of destinations
-    schema:
-      type: array
-      items:
-        type: object
-        properties:
-          id:
-            type: integer
-            example: 1
-          name:
-            type: string
-            example: Montreal
-          country:
-            type: string
-            example: Canada
-          city:
-            type: string
-            example: Montreal
-          category:
-            type: string
-            example: cultural
-          planned_date:
-            type: string
-            example: 2026-09-20
-          estimated_budget:
-            type: number
-            example: 3000
-          status:
-            type: string
-            example: planned
-          notes:
-            type: string
-            example: Visit museums
-          is_favorite:
-            type: boolean
-            example: true
+    description: Paginated and filtered list of destinations
 """
     page = request.args.get("page", default=1, type=int)
     per_page = request.args.get("per_page", default=10, type=int)
-    results = get_all_destinations(page, per_page)
-    
+    status = request.args.get("status", default="", type=str)
+    category = request.args.get("category", default="", type=str)
+    search = request.args.get("search", default="", type=str)
+
+    results = get_all_destinations(
+        page=page,
+        per_page=per_page,
+        status=status,
+        category=category,
+        search=search,
+    )
+
     return jsonify(results), 200
 
 @destination_bp.route('/destinations/<int:destination_id>', methods=["GET"])
@@ -176,30 +167,23 @@ parameters:
     example: 1
 responses:
   200:
-    description: Destination found
+    description: Paginated and filtered list of destinations
     schema:
       type: object
       properties:
-        id:
+        items:
+          type: array
+          items:
+            type: object
+        total:
           type: integer
-        name:
-          type: string
-        country:
-          type: string
-        city:
-          type: string
-        category:
-          type: string
-        planned_date:
-          type: string
-        estimated_budget:
-          type: number
-        status:
-          type: string
-        notes:
-          type: string
-        is_favorite:
-          type: boolean
+          example: 10
+        pages:
+          type: integer
+          example: 2
+        current_page:
+          type: integer
+          example: 1
   404:
     description: Destination not found
 """
@@ -268,6 +252,57 @@ responses:
         destination = update_destination(destination_id, data)
         return jsonify(destination.to_dict()), 200
     
+    except ValueError as error:
+        message = str(error)
+        status_code = 404 if "not found" in message.lower() else 400
+        return jsonify({"error": message}), status_code
+      
+@destination_bp.route('/destinations/<int:destination_id>/favorite', methods=["PUT"])
+def update_destination_favorite_route(destination_id):
+    """
+Update destination favorite status
+---
+tags:
+  - Destinations
+consumes:
+  - application/json
+parameters:
+  - name: destination_id
+    in: path
+    type: integer
+    required: true
+    example: 1
+  - in: body
+    name: body
+    required: true
+    schema:
+      type: object
+      required:
+        - is_favorite
+      properties:
+        is_favorite:
+          type: boolean
+          example: true
+responses:
+  200:
+    description: Destination favorite status updated successfully
+  400:
+    description: Invalid request
+  404:
+    description: Destination not found
+"""
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
+
+    data = request.get_json(silent=True)
+
+    if not data or "is_favorite" not in data:
+        return jsonify({"error": "Field 'is_favorite' is required."}), 400
+
+    try:
+        destination = update_destination_favorite(destination_id, data["is_favorite"])
+        return jsonify(destination.to_dict()), 200
+
     except ValueError as error:
         message = str(error)
         status_code = 404 if "not found" in message.lower() else 400

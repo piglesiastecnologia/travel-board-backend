@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from flasgger import Swagger
 from app.extensions import db
 from app.routes.destination_routes import destination_bp
@@ -15,8 +16,20 @@ def create_app():
         "uiversion": 3
     }
     
+    # CORS configuration
+    app.config["CORS_HEADERS"] = "Content-Type"
+
+    
     db.init_app(app)
     Swagger(app)
+
+    CORS(
+        app,
+        resources={r"/*": {"origins": "*"}},
+        allow_headers=["Content-Type"],
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    )
+
     
     # Realizar o registro das rotas com blueprint
     # O Conceito dos Blueprints
