@@ -170,6 +170,11 @@ A API estará disponível em:
 ```text
 http://127.0.0.1:5001
 ```
+E a Documentação Swagger da API estará disponível em:
+
+```text
+http://127.0.0.1:5001/apidocs/
+```
 
 ---
 
